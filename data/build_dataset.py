@@ -138,8 +138,9 @@ def temporal_train_test_split(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFr
     Temporal split on the 'date' column. Uses strict chronological ordering
     so no future data leaks into training.
 
-    'date' is dropped from both splits before saving — it is a bookkeeping
-    column, not a model feature.
+    'date' is KEPT in both splits:
+      - XGBoost: ignores it automatically via feature_columns.json
+      - LSTM/PyTorch: needs it to reconstruct per-(state, disease) sequences
     """
     print("Executing temporal train/test split (cutoff: 2023-01-01)...")
 
@@ -147,8 +148,8 @@ def temporal_train_test_split(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFr
         raise KeyError("'date' column missing — cannot perform temporal split.")
 
     cutoff_date = pd.Timestamp('2023-01-01')
-    train_df = df[df['date'] < cutoff_date].drop(columns=['date']).reset_index(drop=True)
-    test_df  = df[df['date'] >= cutoff_date].drop(columns=['date']).reset_index(drop=True)
+    train_df = df[df['date'] < cutoff_date].reset_index(drop=True)
+    test_df  = df[df['date'] >= cutoff_date].reset_index(drop=True)
 
     print(f"  Train: {len(train_df):,} rows  (< 2023-01-01)")
     print(f"  Test : {len(test_df):,} rows  (>= 2023-01-01)")
